@@ -30,7 +30,8 @@ function getPassword(prompt, callback) {
     process.stdout.write(prompt);
   }
 
-  const BACKSPACE = 8;
+  const BACKSPACE_WINDOWS = 8;
+  const BACKSPACE_LINUX = 127;
   const EXIT = 3;
   const ESC = 27;
   const ENTER = 13;
@@ -57,7 +58,8 @@ function getPassword(prompt, callback) {
         process.stdout.write('\n');
         process.error();
         break;
-      case BACKSPACE:
+      case BACKSPACE_WINDOWS:
+      case BACKSPACE_LINUX:
         // Remove last character
         password = password.slice(0, password.length - 1);
         process.stdout.clearLine();
