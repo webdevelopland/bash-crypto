@@ -1,0 +1,23 @@
+{
+  "name": "bash-crypto",
+  "description": "Compressing and encrypting files and folder by bash",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Web Developland",
+    "email": "webdevelopland@protonmail.com"
+  },
+  "keywords": [
+    "linux",
+    "bash",
+    "compress",
+    "decompress",
+    "encrypt",
+    "decrypt",
+    "file",
+    "folder"
+  ],
+  "license": "MIT"
+}
