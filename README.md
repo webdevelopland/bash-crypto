@@ -9,14 +9,13 @@ node crypto.js -e folder
 
 Decrypt
 ```javascript
-node crypto.js -d folder
 // folder.data -> folder
+node crypto.js -d folder
 // Password: *****
 ```
 
 Password by command
 ```javascript
 node crypto.js -e folder password
-// &
 node crypto.js -d folder password
 ```
