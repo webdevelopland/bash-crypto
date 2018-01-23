@@ -1,23 +1,54 @@
+const fs = require('fs');
+
 function getInput(callback) {
   var mode = process.argv[2];
   if (mode !== '-e' && mode !== '-d') {
     kill("Error: Invalid mode.");
   }
-  checkPassword(process.argv[3], process.argv[4], (filename, password) => {
-    if (!password) kill("Error: Invalid password.");
-    callback(mode, filename, password);
+
+  checkFilename(process.argv[3], mode, (error, filename) => {
+    if (error) {
+      kill("Error: Invalid filename.");
+    }
+
+    checkPassword(process.argv[4], password => {
+      if (!password) {
+        kill("Error: Invalid password.");
+      }
+      callback(mode, filename, password);
+    });
   });
 }
 
-function checkPassword(filename, password, callback) {
-  if (!filename) kill("Error: Invalid filename.");
+function checkFilename(filename, mode, callback) {
+  if (!filename) {
+    callback(true);
+    return;
+  }
+
+  if (mode === '-e') {
+    var filepath = filename;
+  } else if (mode === '-d') {
+    var filepath = filename + '.data';
+  }
+
+  fs.exists(filepath, exists => {
+    if (!exists) {
+      callback(true);
+      return;
+    }
+    callback(false, filename);
+  });
+}
+
+function checkPassword(password, callback) {
   if (!password) {
-    getPassword('Password: ', (password) => {
-      callback(filename, password)
+    getPassword('Password: ', password => {
+      callback(password)
     });
     return;
   }
-  callback(filename, password);
+  callback(password);
 }
 
 function kill(message) {
@@ -56,7 +87,7 @@ function getPassword(prompt, callback) {
       case ESC:
         // Close program
         process.stdout.write('\n');
-        process.error();
+        process.exit();
         break;
       case BACKSPACE_WINDOWS:
       case BACKSPACE_LINUX:
@@ -65,7 +96,7 @@ function getPassword(prompt, callback) {
         process.stdout.clearLine();
         process.stdout.cursorTo(0);
         process.stdout.write(prompt);
-        process.stdout.write(password.split('').map(function () {
+        process.stdout.write(password.split('').map(() => {
           return '*';
         }).join(''));
         break;
@@ -121,11 +152,13 @@ getInput((mode, name, password) => {
 function encryptFolder(name, password) {
   tar(name, error => {
     if (error) {
+      console.log('Error: Invalid filename.');
       unlink(name);
-      kill('Error: Invalid filename');
+      return;
     }
-    encrypt(name, password, error => {
+    encrypt(name, password, () => {
       unlink(name);
+      console.log('Encrypted');
     });
   });
 }
@@ -133,11 +166,13 @@ function encryptFolder(name, password) {
 function decryptFolder(name, password) {
   decrypt(name, password, error => {
     if (error) {
+      console.log('Error: Invalid password.');
       unlink(name);
-      kill('Error: Invalid password');
+      return;
     }
-    untar(name, error => {
+    untar(name, () => {
       unlink(name);
+      console.log('Decrypted');
     });
   });
 }

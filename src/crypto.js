@@ -1,5 +1,5 @@
-const { getInput, kill } = require('./process');
-const { unlink, encrypt, decrypt, tar, untar }  = require('./bash');
+const { getInput } = require('./process');
+const { unlink, encrypt, decrypt, tar, untar } = require('./bash');
 
 getInput((mode, name, password) => {
   if (mode === '-e') {
@@ -12,11 +12,13 @@ getInput((mode, name, password) => {
 function encryptFolder(name, password) {
   tar(name, error => {
     if (error) {
+      console.log('Error: Invalid filename.');
       unlink(name);
-      kill('Error: Invalid filename');
+      return;
     }
-    encrypt(name, password, error => {
+    encrypt(name, password, () => {
       unlink(name);
+      console.log('Encrypted');
     });
   });
 }
@@ -24,11 +26,13 @@ function encryptFolder(name, password) {
 function decryptFolder(name, password) {
   decrypt(name, password, error => {
     if (error) {
+      console.log('Error: Invalid password.');
       unlink(name);
-      kill('Error: Invalid password');
+      return;
     }
-    untar(name, error => {
+    untar(name, () => {
       unlink(name);
+      console.log('Decrypted');
     });
   });
 }
