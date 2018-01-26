@@ -1,15 +1,18 @@
-const { getInput } = require('./process');
+const { getInput, onKey, consts } = require('./process');
 const { unlink, encrypt, decrypt, tar, untar } = require('./bash');
+const { remove } = require('./remove');
 
 getInput((mode, name, password) => {
   if (mode === '-e') {
     encryptFolder(name, password);
   } else if (mode === '-d') {
     decryptFolder(name, password);
+  } else if (mode === '-s') {
+    startSession(name, password);
   }
 });
 
-function encryptFolder(name, password) {
+function encryptFolder(name, password, callback) {
   tar(name, error => {
     if (error) {
       console.log('Error: Invalid filename.');
@@ -17,13 +20,15 @@ function encryptFolder(name, password) {
       return;
     }
     encrypt(name, password, () => {
-      unlink(name);
+      unlink(name, () => {
+        if (callback) callback();
+      });
       console.log('Encrypted');
     });
   });
 }
 
-function decryptFolder(name, password) {
+function decryptFolder(name, password, callback) {
   decrypt(name, password, error => {
     if (error) {
       console.log('Error: Invalid password.');
@@ -31,8 +36,29 @@ function decryptFolder(name, password) {
       return;
     }
     untar(name, () => {
-      unlink(name);
+      unlink(name, () => {
+        if (callback) callback();
+      });
       console.log('Decrypted');
+    });
+  });
+}
+
+function startSession(name, password) {
+  decryptFolder(name, password, () => {
+    console.log('Session started...');
+    onKey((char, code) => {
+      switch (code) {
+        case consts.EXIT:
+        case consts.ESC:
+        case consts.ENTER:
+          encryptFolder(name, password, () => {
+            remove(name);
+            process.exit();
+          });
+          process.stdin.pause();
+          break;
+      }
     });
   });
 }
