@@ -2,18 +2,18 @@ const fs = require('fs');
 
 function getInput(callback) {
   var mode = process.argv[2];
-  if (mode !== '-e' && mode !== '-d' && mode !== '-s') {
-    kill('Error: Invalid mode.');
+  if (mode !== '-e' && mode !== '-d' && mode !== '-s' && mode !== '-v') {
+    kill('Error: Invalid mode');
   }
 
   checkFilename(process.argv[3], mode, (error, filename) => {
     if (error) {
-      kill('Error: Invalid filename.');
+      kill('Error: Invalid filename');
     }
 
     checkPassword(process.argv[4], password => {
       if (!password) {
-        kill('Error: Invalid password.');
+        kill('Error: Invalid password');
       }
       callback(mode, filename, password);
     });
@@ -28,7 +28,7 @@ function checkFilename(filename, mode, callback) {
 
   if (mode === '-e') {
     var filepath = filename;
-  } else if (mode === '-d' || mode === '-s') {
+  } else if (mode === '-d' || mode === '-s' || mode === '-v') {
     var filepath = filename + '.data';
   }
 

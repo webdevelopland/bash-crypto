@@ -1,58 +1,21 @@
-const path = require('path');
 const fs = require('fs');
-
-function remove(fullPath) {
-  if (fs.lstatSync(fullPath).isDirectory()) {
-    var items = [];
-    folderTree(fullPath, (itemPath, type) => {
-      items.push({
-        path: itemPath,
-        type: type
-      });
-    }, () => {
-      items.reverse();
-      for(let item of items) {
-        if (item.type.isdir) fs.rmdirSync(item.path);
-        else fs.unlinkSync(item.path);
-      }
-      fs.rmdirSync(fullPath);
-    });
-  } else {
-    fs.unlinkSync(fullPath);
-  }
-}
-
-//Open all files and folder by path
-function folderTree(treePath, callback, onend) {
-  var items = fs.readdirSync(treePath);
-  for(itemName of items) {
-    let itemPath = path.join(treePath, itemName);
-    let isdir = fs.lstatSync( itemPath ).isDirectory();
-
-    var type = {
-      isdir: isdir,
-      isfile: !isdir
-    };
-    callback(itemPath, type);
-    if (isdir) folderTree(itemPath, callback);
-  }
-  if (onend) onend();
-}
+const path = require('path');
+const { exec } = require('child_process');
 
 function getInput(callback) {
   var mode = process.argv[2];
-  if (mode !== '-e' && mode !== '-d' && mode !== '-s') {
-    kill('Error: Invalid mode.');
+  if (mode !== '-e' && mode !== '-d' && mode !== '-s' && mode !== '-v') {
+    kill('Error: Invalid mode');
   }
 
   checkFilename(process.argv[3], mode, (error, filename) => {
     if (error) {
-      kill('Error: Invalid filename.');
+      kill('Error: Invalid filename');
     }
 
     checkPassword(process.argv[4], password => {
       if (!password) {
-        kill('Error: Invalid password.');
+        kill('Error: Invalid password');
       }
       callback(mode, filename, password);
     });
@@ -67,7 +30,7 @@ function checkFilename(filename, mode, callback) {
 
   if (mode === '-e') {
     var filepath = filename;
-  } else if (mode === '-d' || mode === '-s') {
+  } else if (mode === '-d' || mode === '-s' || mode === '-v') {
     var filepath = filename + '.data';
   }
 
@@ -160,8 +123,6 @@ function onKey(callback) {
   process.stdin.resume();
 }
 
-const { exec } = require('child_process');
-
 function unlink(filename, callback) {
   exec(
     `unlink ${filename}.tar.gz`,
@@ -193,6 +154,44 @@ function untar(filename, callback) {
   );
 }
 
+function remove(fullPath) {
+  if (fs.lstatSync(fullPath).isDirectory()) {
+    var items = [];
+    folderTree(fullPath, (itemPath, type) => {
+      items.push({
+        path: itemPath,
+        type: type
+      });
+    }, () => {
+      items.reverse();
+      for(let item of items) {
+        if (item.type.isdir) fs.rmdirSync(item.path);
+        else fs.unlinkSync(item.path);
+      }
+      fs.rmdirSync(fullPath);
+    });
+  } else {
+    fs.unlinkSync(fullPath);
+  }
+}
+
+//Open all files and folder by path
+function folderTree(treePath, callback, onend) {
+  var items = fs.readdirSync(treePath);
+  for(itemName of items) {
+    let itemPath = path.join(treePath, itemName);
+    let isdir = fs.lstatSync( itemPath ).isDirectory();
+
+    var type = {
+      isdir: isdir,
+      isfile: !isdir
+    };
+    callback(itemPath, type);
+    if (isdir) folderTree(itemPath, callback);
+  }
+  if (onend) onend();
+}
+
 getInput((mode, name, password) => {
   if (mode === '-e') {
     encryptFolder(name, password);
@@ -200,13 +199,15 @@ getInput((mode, name, password) => {
     decryptFolder(name, password);
   } else if (mode === '-s') {
     startSession(name, password);
+  } else if (mode === '-v') {
+    verifyPassowrd(name, password);
   }
 });
 
 function encryptFolder(name, password, callback) {
   tar(name, error => {
     if (error) {
-      console.log('Error: Invalid filename.');
+      console.log('Error: Invalid filename');
       unlink(name);
       return;
     }
@@ -222,7 +223,7 @@ function encryptFolder(name, password, callback) {
 function decryptFolder(name, password, callback) {
   decrypt(name, password, error => {
     if (error) {
-      console.log('Error: Invalid password.');
+      console.log('Error: Invalid password');
       unlink(name);
       return;
     }
@@ -242,6 +243,9 @@ function startSession(name, password) {
       switch (code) {
         case consts.EXIT:
         case consts.ESC:
+          remove(name);
+          process.exit();
+          break;
         case consts.ENTER:
           encryptFolder(name, password, () => {
             remove(name);
@@ -251,5 +255,17 @@ function startSession(name, password) {
           break;
       }
     });
+  });
+}
+
+function verifyPassowrd(name, password) {
+  decrypt(name, password, error => {
+    if (error) {
+      console.log('Invalid password');
+      unlink(name);
+    } else {
+      console.log('Correct');
+      unlink(name);
+    }
   });
 }

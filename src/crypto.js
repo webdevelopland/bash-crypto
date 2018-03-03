@@ -9,13 +9,15 @@ getInput((mode, name, password) => {
     decryptFolder(name, password);
   } else if (mode === '-s') {
     startSession(name, password);
+  } else if (mode === '-v') {
+    verifyPassowrd(name, password);
   }
 });
 
 function encryptFolder(name, password, callback) {
   tar(name, error => {
     if (error) {
-      console.log('Error: Invalid filename.');
+      console.log('Error: Invalid filename');
       unlink(name);
       return;
     }
@@ -31,7 +33,7 @@ function encryptFolder(name, password, callback) {
 function decryptFolder(name, password, callback) {
   decrypt(name, password, error => {
     if (error) {
-      console.log('Error: Invalid password.');
+      console.log('Error: Invalid password');
       unlink(name);
       return;
     }
@@ -51,6 +53,9 @@ function startSession(name, password) {
       switch (code) {
         case consts.EXIT:
         case consts.ESC:
+          remove(name);
+          process.exit();
+          break;
         case consts.ENTER:
           encryptFolder(name, password, () => {
             remove(name);
@@ -60,5 +65,17 @@ function startSession(name, password) {
           break;
       }
     });
+  });
+}
+
+function verifyPassowrd(name, password) {
+  decrypt(name, password, error => {
+    if (error) {
+      console.log('Invalid password');
+      unlink(name);
+    } else {
+      console.log('Correct');
+      unlink(name);
+    }
   });
 }
